@@ -38,9 +38,11 @@ void MapReader::open(const std::string &path)
         cout << "Map version is not 7.\n";
         return;
     }
-    auto posx = readint32();
-    auto posy = readint32();
-    auto posz = readint32();
+    pl.posx  = readint32();
+    pl.posy  = readint32();
+    pl.posz  = readint32();
+    pl.angle = readint16();
+    pl.startSector = readint16();
 
     mapFile.seekg(0x14, ios_base::beg);
     int16_t numSectors = readint16();
@@ -97,27 +99,29 @@ void MapReader::convert(const std::string &path)
     file << "// wallnum stands for wall number. It defines total number of wals in the map.\n";
     file << "wallnum " << walls.size() << "\n";
     file << "// pstart stands for player start. It defines where player will be spawn in the level.\n";
-    file << "// pstart X Y start_sector\n";
-    file << "pstart " << "0.0 0.0 0" << "\n";
+    file << "// pstart X Y Z angle start_sector\n";
+    constexpr float coordinateDivider = 100.0f;
+    constexpr float maxIntAngle = 2047.0f;
+    file << "pstart " << static_cast<float>(pl.posx)/coordinateDivider << " " << static_cast<float>(pl.posy)/coordinateDivider << " "
+         << static_cast<float>(pl.posz)/coordinateDivider << " " << static_cast<float>(pl.angle)/maxIntAngle*360.0f << " " << pl.startSector << "\n";
     file << "\n";
 
     file << "// s stands for sector. It defines one sector. Format:\n"
             "//s start_wall_index wall_number floor_height ceiling_height\n";
-    constexpr float sectorHeightDivider = 1000.0f;
     for(const auto & sec : sectors)
     {
         file << "s "<< sec.startWall << " " << sec.wallNum << " "
-             << static_cast<float>(sec.floorHeigth)/sectorHeightDivider << " "
-             << static_cast<float>(sec.ceilingHeight)/sectorHeightDivider << "\n";
+             << static_cast<float>(sec.floorHeigth)/coordinateDivider << " "
+             << static_cast<float>(sec.ceilingHeight)/coordinateDivider << "\n";
     }
 
     file << "\n// w stands for wall. It defines one wall. Format:\n"
             "//w point_x point_y second_wall_point next_wall_index next_sector(in case if portal > -1)\n";
-    constexpr float wallPointDivider = 100.0f;
+
     for(const auto & wll : walls)
     {
-        file << "w "<< static_cast<float>(wll.x)/wallPointDivider << " "
-             << static_cast<float>(wll.y)/wallPointDivider
+        file << "w "<< static_cast<float>(wll.x)/coordinateDivider << " "
+             << static_cast<float>(wll.y)/coordinateDivider
              << " " << wll.point2 << " " << wll.nextWall << " " << wll.nextSector << "\n";
     }
     file.close();

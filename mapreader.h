@@ -24,6 +24,12 @@ struct wall
     int16_t nextSector;
 };
 
+struct player
+{
+    int32_t posx, posy, posz;
+    int16_t angle, startSector;
+};
+
 class MapReader
 {
     bool isFileOpened = false;
@@ -32,6 +38,8 @@ class MapReader
     int16_t readint16();
     int32_t readint32();
 
+
+    player pl;
     std::vector<sector> sectors;
     std::vector<wall> walls;
 
