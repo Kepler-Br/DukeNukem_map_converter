@@ -5,7 +5,7 @@ CONFIG -= qt
 
 SOURCES += \
         main.cpp \
-        mapreader.cpp
+        mapconverter.cpp
 
 HEADERS += \
-    mapreader.h
+    mapconverter.h

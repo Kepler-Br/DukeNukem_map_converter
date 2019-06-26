@@ -1,51 +1,61 @@
-#include "mapreader.h"
+#include "mapconverter.h"
 #include <vector>
 
-int16_t MapReader::readint16()
+int16_t MapConverter::readint16(std::fstream &file)
 {
     int16_t num = 0;
-    mapFile.read(reinterpret_cast<char*>(&num), sizeof(int16_t));
+    file.read(reinterpret_cast<char*>(&num), sizeof(int16_t));
     return num;
 }
 
-int32_t MapReader::readint32()
+int32_t MapConverter::readint32(std::fstream &file)
 {
     int32_t num = 0;
-    mapFile.read(reinterpret_cast<char*>(&num), sizeof(int32_t));
+    file.read(reinterpret_cast<char*>(&num), sizeof(int32_t));
     return num;
 }
 
-void MapReader::open(const std::string &path)
+void MapConverter::checkFileFlags(std::fstream &file)
 {
-    using namespace std;
+    using std::cout;
 
-    mapFile.open(path, std::ios_base::binary | std::ios_base::in);
-    if(!mapFile.is_open())
+    if(!file.is_open())
     {
         cout << "Cannot open file.\n";
         return;
     }
 
-    if(mapFile.bad())
+    if(file.bad())
     {
         cout << "Cannot open file: bad.\n";
         return;
     }
 
-    int32_t mapVersion = readint32();
+    int32_t mapVersion = readint32(file);
     if(mapVersion != 7)
     {
         cout << "Map version is not 7.\n";
         return;
     }
-    pl.posx  = readint32();
-    pl.posy  = readint32();
-    pl.posz  = readint32();
-    pl.angle = readint16();
-    pl.startSector = readint16();
+}
 
-    mapFile.seekg(0x14, ios_base::beg);
-    int16_t numSectors = readint16();
+void MapConverter::readPlayerAttributes(std::fstream &file)
+{
+    pl.posx  = readint32(file);
+    pl.posy  = readint32(file);
+    pl.posz  = readint32(file);
+    pl.angle = readint16(file);
+    pl.startSector = readint16(file);
+}
+
+void MapConverter::readSectors(std::fstream &file)
+{
+    using std::runtime_error;
+    using std::ios_base;
+
+    file.seekg(0x14, ios_base::beg);
+
+    int16_t numSectors = readint16(file);
     if(numSectors <= 0)
         throw runtime_error("Negative number of sectors.");
 
@@ -56,17 +66,23 @@ void MapReader::open(const std::string &path)
     for(int i = 0; i < numSectors; i++)
     {
         sector sec;
-        sec.startWall = readint16();
-        sec.wallNum = readint16();
-        sec.ceilingHeight = readint32();
-        sec.floorHeigth = readint32();
+        sec.startWall = readint16(file);
+        sec.wallNum = readint16(file);
+        sec.ceilingHeight = readint32(file);
+        sec.floorHeigth = readint32(file);
         sectors.push_back(sec);
-        mapFile.seekg(0x1C, ios_base::cur);
-        if(mapFile.eof())
+        file.seekg(0x1C, ios_base::cur);
+        if(file.eof())
             throw runtime_error("Unexpected eof.");
     }
+}
 
-    int16_t numWalls = readint16();
+void MapConverter::readWalls(std::fstream &file)
+{
+    using std::runtime_error;
+    using std::ios_base;
+
+    int16_t numWalls = readint16(file);
     constexpr int maxWalls = 2<<16;
     if(numWalls <= 0)
         throw runtime_error("Negative number of walls.");
@@ -76,36 +92,34 @@ void MapReader::open(const std::string &path)
     for(int i = 0; i < numWalls; i++)
     {
         wall wll;
-        wll.x = readint32();
-        wll.y = readint32();
-        wll.point2 = readint16();
-        wll.nextWall = readint16();
-        wll.nextSector = readint16();
+        wll.x = readint32(file);
+        wll.y = readint32(file);
+        wll.point2 = readint16(file);
+        wll.nextWall = readint16(file);
+        wll.nextSector = readint16(file);
         walls.push_back(wll);
-        mapFile.seekg(0x12, ios_base::cur);
-        if(mapFile.eof())
+        file.seekg(0x12, ios_base::cur);
+        if(file.eof())
             throw runtime_error("Unexpected eof.");
     }
-    mapFile.close();
-    isFileOpened = true;
 }
 
-void MapReader::convert(const std::string &path)
+void MapConverter::writeHeader(std::fstream &file, float coordinateDivider)
 {
-    using namespace std;
-    fstream file(path, ios_base::out);
     file << "// secnum stands for sector number. It defines total number of sectors in the map.\n";
     file << "secnum " << sectors.size() << "\n\n";
     file << "// wallnum stands for wall number. It defines total number of wals in the map.\n";
     file << "wallnum " << walls.size() << "\n";
     file << "// pstart stands for player start. It defines where player will be spawn in the level.\n";
     file << "// pstart X Y Z angle start_sector\n";
-    constexpr float coordinateDivider = 100.0f;
     constexpr float maxIntAngle = 2047.0f;
     file << "pstart " << static_cast<float>(pl.posx)/coordinateDivider << " " << static_cast<float>(pl.posy)/coordinateDivider << " "
          << static_cast<float>(pl.posz)/coordinateDivider << " " << static_cast<float>(pl.angle)/maxIntAngle*360.0f << " " << pl.startSector << "\n";
     file << "\n";
+}
 
+void MapConverter::writeSectors(std::fstream &file, float coordinateDivider)
+{
     file << "// s stands for sector. It defines one sector. Format:\n"
             "//s start_wall_index wall_number floor_height ceiling_height\n";
     for(const auto & sec : sectors)
@@ -114,15 +128,47 @@ void MapReader::convert(const std::string &path)
              << static_cast<float>(sec.floorHeigth)/coordinateDivider << " "
              << static_cast<float>(sec.ceilingHeight)/coordinateDivider << "\n";
     }
+}
 
+void MapConverter::writeWalls(std::fstream &file, float coordinateDivider)
+{
     file << "\n// w stands for wall. It defines one wall. Format:\n"
-            "//w point_x point_y second_wall_point next_wall_index next_sector(in case if portal > -1)\n";
+            "//w point_x point_y second_wall_point next_sector(in case if portal > -1)\n";
 
     for(const auto & wll : walls)
     {
         file << "w "<< static_cast<float>(wll.x)/coordinateDivider << " "
              << static_cast<float>(wll.y)/coordinateDivider
-             << " " << wll.point2 << " " << wll.nextWall << " " << wll.nextSector << "\n";
+             << " " << wll.point2 << " " << wll.nextSector << "\n";
     }
+}
+
+void MapConverter::read(const std::string &path)
+{
+    using std::fstream;
+    using std::ios_base;
+
+    std::fstream file;
+    file.open(path, std::ios_base::binary | std::ios_base::in);
+
+    checkFileFlags(file);
+    readPlayerAttributes(file);
+    readSectors(file);
+    readWalls(file);
+    file.close();
+}
+
+void MapConverter::convert(const std::string &path)
+{
+    using std::fstream;
+    using std::ios_base;
+
+    fstream file(path, ios_base::out);
+
+    constexpr float coordinateDivider = 100.0f;
+    writeHeader(file, coordinateDivider);
+    writeSectors(file, coordinateDivider);
+    writeWalls(file, coordinateDivider);
+
     file.close();
 }
