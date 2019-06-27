@@ -71,8 +71,8 @@ void MapConverter::readSectors(std::fstream &file)
         sector sec;
         sec.startWall = readint16(file);
         sec.wallNum = readint16(file);
-        sec.ceilingHeight = readint32(file);
         sec.floorHeigth = readint32(file);
+        sec.ceilingHeight = readint32(file);
         sectors.push_back(sec);
         file.seekg(0x1C, ios_base::cur);
         if(file.eof())
