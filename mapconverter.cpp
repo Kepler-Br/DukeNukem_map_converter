@@ -17,24 +17,27 @@ int32_t MapConverter::readint32(std::fstream &file)
 
 void MapConverter::checkFileFlags(std::fstream &file)
 {
-    using std::cout;
+//    using std::cout;
 
     if(!file.is_open())
     {
-        cout << "Cannot open file.\n";
+        puts("Cannot open file.\n\0");
+//        cout << "Cannot open file.\n";
         return;
     }
 
     if(file.bad())
     {
-        cout << "Cannot open file: bad.\n";
+        puts("Cannot open file: bad.\n\0");
+//        cout << "Cannot open file: bad.\n";
         return;
     }
 
     int32_t mapVersion = readint32(file);
     if(mapVersion != 7)
     {
-        cout << "Map version is not 7.\n";
+        puts("Map version is not 7.\n\0");
+//        cout << "Map version is not 7.\n";
         return;
     }
 }
@@ -104,7 +107,7 @@ void MapConverter::readWalls(std::fstream &file)
     }
 }
 
-void MapConverter::writeHeader(std::fstream &file, float coordinateDivider)
+void MapConverter::writeHeader(std::fstream &file)
 {
     file << "// secnum stands for sector number. It defines total number of sectors in the map.\n";
     file << "secnum " << sectors.size() << "\n\n";
@@ -118,7 +121,7 @@ void MapConverter::writeHeader(std::fstream &file, float coordinateDivider)
     file << "\n";
 }
 
-void MapConverter::writeSectors(std::fstream &file, float coordinateDivider)
+void MapConverter::writeSectors(std::fstream &file)
 {
     file << "// s stands for sector. It defines one sector. Format:\n"
             "//s start_wall_index wall_number floor_height ceiling_height\n";
@@ -130,7 +133,7 @@ void MapConverter::writeSectors(std::fstream &file, float coordinateDivider)
     }
 }
 
-void MapConverter::writeWalls(std::fstream &file, float coordinateDivider)
+void MapConverter::writeWalls(std::fstream &file)
 {
     file << "\n// w stands for wall. It defines one wall. Format:\n"
             "//w point_x point_y second_wall_point next_sector(in case if portal > -1)\n";
@@ -165,10 +168,9 @@ void MapConverter::convert(const std::string &path)
 
     fstream file(path, ios_base::out);
 
-    constexpr float coordinateDivider = 100.0f;
-    writeHeader(file, coordinateDivider);
-    writeSectors(file, coordinateDivider);
-    writeWalls(file, coordinateDivider);
+    writeHeader(file);
+    writeSectors(file);
+    writeWalls(file);
 
     file.close();
 }

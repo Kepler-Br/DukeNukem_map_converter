@@ -2,7 +2,7 @@
 #define MAPCONVERTER_H
 
 #include <string>
-#include <iostream>
+//#include <iostream>
 #include <fstream>
 #include <vector>
 
@@ -43,18 +43,21 @@ class MapConverter
     void readSectors(std::fstream &file);
     void readWalls(std::fstream &file);
 
-    void writeHeader(std::fstream &file, float coordinateDivider);
-    void writeSectors(std::fstream &file, float coordinateDivider);
-    void writeWalls(std::fstream &file, float coordinateDivider);
+    void writeHeader(std::fstream &file);
+    void writeSectors(std::fstream &file);
+    void writeWalls(std::fstream &file);
 
 
     player pl;
     std::vector<sector> sectors;
     std::vector<wall> walls;
 
+    const float coordinateDivider;
+
 public:
 
-    MapConverter()
+    MapConverter(const float divider):
+        coordinateDivider(divider)
     {
 
     }
