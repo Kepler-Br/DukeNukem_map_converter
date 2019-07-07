@@ -23,9 +23,12 @@ class MapConverter
     struct wall
     {
         int32_t x, y;
+        int32_t panningX, panningY;
+        int32_t repeatX, repeatY;
         int16_t point2;
         int16_t nextWall;
         int16_t nextSector;
+        int16_t textureIndex;
     };
 
     struct player
@@ -35,6 +38,7 @@ class MapConverter
     };
 
 
+    int8_t readint8(std::fstream &file);
     int16_t readint16(std::fstream &file);
     int32_t readint32(std::fstream &file);
 

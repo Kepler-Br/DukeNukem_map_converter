@@ -1,6 +1,13 @@
 #include "mapconverter.h"
 #include <vector>
 
+int8_t MapConverter::readint8(std::fstream &file)
+{
+    int8_t num = 0;
+    file.read(reinterpret_cast<char*>(&num), sizeof(int8_t));
+    return num;
+}
+
 int16_t MapConverter::readint16(std::fstream &file)
 {
     int16_t num = 0;
@@ -100,8 +107,24 @@ void MapConverter::readWalls(std::fstream &file)
         wll.point2 = readint16(file);
         wll.nextWall = readint16(file);
         wll.nextSector = readint16(file);
+        int16_t cstat = readint16(file);
+        wll.textureIndex = readint16(file);
+        int16_t overpicnum = readint16(file);
+        int8_t shade = readint8(file);
+        int8_t pal = readint16(file);
+
+        wll.repeatX= readint8(file);
+        wll.repeatY = readint8(file);
+
+        wll.panningX = readint8(file);
+        wll.panningY = readint8(file);
+
+        int16_t lotag = readint16(file);
+        int16_t hitag = readint16(file);
+        int16_t extra = readint16(file);
+
+
         walls.push_back(wll);
-        file.seekg(0x12, ios_base::cur);
         if(file.eof())
             throw runtime_error("Unexpected eof.");
     }
