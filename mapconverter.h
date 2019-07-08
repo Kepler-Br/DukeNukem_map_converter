@@ -2,7 +2,7 @@
 #define MAPCONVERTER_H
 
 #include <string>
-//#include <iostream>
+#include <iostream>
 #include <fstream>
 #include <vector>
 
@@ -18,17 +18,18 @@ class MapConverter
         int16_t wallNum;
         int32_t ceilingHeight;
         int32_t floorHeigth;
+        int16_t ceilingTextureIndex;
+        int16_t floorTextureIndex;
     };
 
     struct wall
     {
         int32_t x, y;
-        int32_t panningX, panningY;
-        int32_t repeatX, repeatY;
         int16_t point2;
-        int16_t nextWall;
         int16_t nextSector;
         int16_t textureIndex;
+        uint8_t repeatX, repeatY;
+        uint8_t panningX, panningY;
     };
 
     struct player
@@ -37,31 +38,31 @@ class MapConverter
         int16_t angle, startSector;
     };
 
-
-    int8_t readint8(std::fstream &file);
+    int16_t readint8(std::fstream &file);
     int16_t readint16(std::fstream &file);
     int32_t readint32(std::fstream &file);
+
+    uint8_t readuint8(std::fstream &file);
+    uint16_t readuint16(std::fstream &file);
+    uint32_t readuint32(std::fstream &file);
 
     void checkFileFlags(std::fstream &file);
     void readPlayerAttributes(std::fstream &file);
     void readSectors(std::fstream &file);
     void readWalls(std::fstream &file);
 
-    void writeHeader(std::fstream &file);
-    void writeSectors(std::fstream &file);
-    void writeWalls(std::fstream &file);
+    void writeHeader(std::fstream &file, float coordinateDivider);
+    void writeSectors(std::fstream &file, float coordinateDivider);
+    void writeWalls(std::fstream &file, float coordinateDivider);
 
 
     player pl;
     std::vector<sector> sectors;
     std::vector<wall> walls;
 
-    const float coordinateDivider;
-
 public:
 
-    MapConverter(const float divider):
-        coordinateDivider(divider)
+    MapConverter()
     {
 
     }

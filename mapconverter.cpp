@@ -1,7 +1,7 @@
 #include "mapconverter.h"
 #include <vector>
 
-int8_t MapConverter::readint8(std::fstream &file)
+int16_t MapConverter::readint8(std::fstream &file)
 {
     int8_t num = 0;
     file.read(reinterpret_cast<char*>(&num), sizeof(int8_t));
@@ -22,29 +22,47 @@ int32_t MapConverter::readint32(std::fstream &file)
     return num;
 }
 
+uint8_t MapConverter::readuint8(std::fstream &file)
+{
+    uint8_t num = 0;
+    file.read(reinterpret_cast<char*>(&num), sizeof(uint8_t));
+    return num;
+}
+
+uint16_t MapConverter::readuint16(std::fstream &file)
+{
+    uint16_t num = 0;
+    file.read(reinterpret_cast<char*>(&num), sizeof(uint16_t));
+    return num;
+}
+
+uint32_t MapConverter::readuint32(std::fstream &file)
+{
+    uint32_t num = 0;
+    file.read(reinterpret_cast<char*>(&num), sizeof(uint32_t));
+    return num;
+}
+
 void MapConverter::checkFileFlags(std::fstream &file)
 {
-//    using std::cout;
+    using std::cout;
 
     if(!file.is_open())
     {
-        puts("Cannot open file.\n\0");
-//        cout << "Cannot open file.\n";
+        cout << "Cannot open file.\n";
         return;
     }
 
     if(file.bad())
     {
-        puts("Cannot open file: bad.\n\0");
-//        cout << "Cannot open file: bad.\n";
+        cout << "Cannot open file: bad.\n";
         return;
     }
 
     int32_t mapVersion = readint32(file);
     if(mapVersion != 7)
     {
-        puts("Map version is not 7.\n\0");
-//        cout << "Map version is not 7.\n";
+        cout << "Map version is not 7.\n";
         return;
     }
 }
@@ -80,8 +98,26 @@ void MapConverter::readSectors(std::fstream &file)
         sec.wallNum = readint16(file);
         sec.floorHeigth = readint32(file);
         sec.ceilingHeight = readint32(file);
+        int16_t ceilingStat = readint16(file);
+        int16_t floorStat = readint16(file);
+        sec.ceilingTextureIndex = readint16(file);
+        int16_t ceilingSlopeValue = readint16(file);
+        int8_t ceilingShade = readint8(file);
+        uint8_t ceilingPallete = readint8(file);
+        uint8_t ceilingXPanning = readint8(file);
+        uint8_t ceilingYPanning = readint8(file);
+        sec.floorTextureIndex = readint16(file);
+        int16_t floorSlopeValue = readint16(file);
+        int8_t floorShade = readint8(file);
+        uint8_t floorPallete = readuint8(file);
+        uint8_t floorXPanning = readuint8(file);
+        uint8_t floorYPanning = readuint8(file);
+        uint8_t visibility = readuint8(file);
+        readint8(file);
+        readint16(file);
+        readint16(file);
+        readint16(file);
         sectors.push_back(sec);
-        file.seekg(0x1C, ios_base::cur);
         if(file.eof())
             throw runtime_error("Unexpected eof.");
     }
@@ -105,32 +141,27 @@ void MapConverter::readWalls(std::fstream &file)
         wll.x = readint32(file);
         wll.y = readint32(file);
         wll.point2 = readint16(file);
-        wll.nextWall = readint16(file);
+        int16_t nextWall = readint16(file);
         wll.nextSector = readint16(file);
         int16_t cstat = readint16(file);
         wll.textureIndex = readint16(file);
         int16_t overpicnum = readint16(file);
         int8_t shade = readint8(file);
-        int8_t pal = readint16(file);
-
-        wll.repeatX= readint8(file);
-        wll.repeatY = readint8(file);
-
-        wll.panningX = readint8(file);
-        wll.panningY = readint8(file);
-
-        int16_t lotag = readint16(file);
-        int16_t hitag = readint16(file);
-        int16_t extra = readint16(file);
-
-
+        uint8_t pallete = readuint8(file);
+        wll.repeatX = readuint8(file);
+        wll.repeatY = readuint8(file);
+        wll.panningX = readuint8(file);
+        wll.panningY = readuint8(file);
+        readuint16(file);
+        readuint16(file);
+        readuint16(file);
         walls.push_back(wll);
         if(file.eof())
             throw runtime_error("Unexpected eof.");
     }
 }
 
-void MapConverter::writeHeader(std::fstream &file)
+void MapConverter::writeHeader(std::fstream &file, float coordinateDivider)
 {
     file << "// secnum stands for sector number. It defines total number of sectors in the map.\n";
     file << "secnum " << sectors.size() << "\n\n";
@@ -144,28 +175,32 @@ void MapConverter::writeHeader(std::fstream &file)
     file << "\n";
 }
 
-void MapConverter::writeSectors(std::fstream &file)
+void MapConverter::writeSectors(std::fstream &file, float coordinateDivider)
 {
     file << "// s stands for sector. It defines one sector. Format:\n"
-            "//s start_wall_index wall_number floor_height ceiling_height\n";
+            "//s start_wall_index wall_number floor_height ceiling_height ceiling_texture_index floor_texture_index\n";
     for(const auto & sec : sectors)
     {
         file << "s "<< sec.startWall << " " << sec.wallNum << " "
              << static_cast<float>(sec.floorHeigth)/coordinateDivider << " "
-             << static_cast<float>(sec.ceilingHeight)/coordinateDivider << "\n";
+             << static_cast<float>(sec.ceilingHeight)/coordinateDivider << " "
+             << sec.ceilingTextureIndex << " " << sec.floorTextureIndex << "\n";
     }
 }
 
-void MapConverter::writeWalls(std::fstream &file)
+void MapConverter::writeWalls(std::fstream &file, float coordinateDivider)
 {
     file << "\n// w stands for wall. It defines one wall. Format:\n"
-            "//w point_x point_y second_wall_point next_sector(in case if portal > -1)\n";
+            "//w point_x point_y second_wall_point next_sector(in case if portal > -1)\n"
+            "//  texture_index repeatX repeatY panningX panningY\n";
 
     for(const auto & wll : walls)
     {
         file << "w "<< static_cast<float>(wll.x)/coordinateDivider << " "
              << static_cast<float>(wll.y)/coordinateDivider
-             << " " << wll.point2 << " " << wll.nextSector << "\n";
+             << " " << wll.point2 << " " << wll.nextSector  << " "
+             << wll.textureIndex << " " << static_cast<int>(wll.repeatX) << " " << static_cast<int>(wll.repeatY)
+             << " " << static_cast<int>(wll.panningX) << " " << static_cast<int>(wll.panningY)  << "\n";
     }
 }
 
@@ -191,9 +226,10 @@ void MapConverter::convert(const std::string &path)
 
     fstream file(path, ios_base::out);
 
-    writeHeader(file);
-    writeSectors(file);
-    writeWalls(file);
+    constexpr float coordinateDivider = 100.0f;
+    writeHeader(file, coordinateDivider);
+    writeSectors(file, coordinateDivider);
+    writeWalls(file, coordinateDivider);
 
     file.close();
 }
