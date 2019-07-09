@@ -181,9 +181,11 @@ void MapConverter::writeSectors(std::fstream &file, float coordinateDivider)
             "//s start_wall_index wall_number floor_height ceiling_height ceiling_texture_index floor_texture_index\n";
     for(const auto & sec : sectors)
     {
+        // Because sectors would be really high.
+        constexpr float sectorHeigthDivider = 4.0f;
         file << "s "<< sec.startWall << " " << sec.wallNum << " "
-             << static_cast<float>(sec.floorHeigth)/coordinateDivider << " "
-             << static_cast<float>(sec.ceilingHeight)/coordinateDivider << " "
+             << static_cast<float>(sec.floorHeigth)/(coordinateDivider*sectorHeigthDivider) << " "
+             << static_cast<float>(sec.ceilingHeight)/(coordinateDivider*sectorHeigthDivider) << " "
              << sec.ceilingTextureIndex << " " << sec.floorTextureIndex << "\n";
     }
 }
