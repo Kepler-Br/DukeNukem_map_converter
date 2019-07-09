@@ -166,7 +166,7 @@ void MapConverter::writeHeader(std::fstream &file, float coordinateDivider)
     file << "// secnum stands for sector number. It defines total number of sectors in the map.\n";
     file << "secnum " << sectors.size() << "\n\n";
     file << "// wallnum stands for wall number. It defines total number of wals in the map.\n";
-    file << "wallnum " << walls.size() << "\n";
+    file << "wallnum " << walls.size() << "\n\n";
     file << "// pstart stands for player start. It defines where player will be spawn in the level.\n";
     file << "// pstart X Y Z angle start_sector\n";
     constexpr float maxIntAngle = 2047.0f;
