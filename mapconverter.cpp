@@ -219,14 +219,13 @@ void MapConverter::read(const std::string &path)
     file.close();
 }
 
-void MapConverter::convert(const std::string &path)
+void MapConverter::convert(const std::string &path, const float coordinateDivider)
 {
     using std::fstream;
     using std::ios_base;
 
     fstream file(path, ios_base::out);
 
-    constexpr float coordinateDivider = 100.0f;
     writeHeader(file, coordinateDivider);
     writeSectors(file, coordinateDivider);
     writeWalls(file, coordinateDivider);

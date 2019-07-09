@@ -69,7 +69,7 @@ public:
 
     void read(const std::string &path);
 
-    void convert(const std::string &path);
+    void convert(const std::string &path, const float coordinateDivider);
 };
 
 #endif // MAPCONVERTER_H
