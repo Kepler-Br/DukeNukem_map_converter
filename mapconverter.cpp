@@ -1,5 +1,6 @@
 #include "mapconverter.h"
 #include <vector>
+#include <set>
 
 int16_t MapConverter::readint8(std::fstream &file)
 {
@@ -175,6 +176,26 @@ void MapConverter::writeHeader(std::fstream &file, float coordinateDivider)
     file << "\n";
 }
 
+void MapConverter::writeTexturePaths(std::fstream &file)
+{
+    std::set<uint> textureIndexes;
+    for(const auto& wall: walls)
+        textureIndexes.insert(wall.textureIndex);
+    for(const auto& sector: sectors)
+    {
+        textureIndexes.insert(sector.floorTextureIndex);
+        textureIndexes.insert(sector.ceilingTextureIndex);
+    }
+    file << "//t stands for texture. It defines level texture paths.\n";
+    file << "//t texture_index texture_path.\n";
+    const std::string defaultTextureFolder = "./textures/";
+    for(const uint textureIndex:textureIndexes)
+    {
+        file << "t " << textureIndex << " " << defaultTextureFolder << textureIndex << ".bmp" << "\n";
+    }
+    file << "\n";
+}
+
 void MapConverter::writeSectors(std::fstream &file, float coordinateDivider)
 {
     file << "// s stands for sector. It defines one sector. Format:\n"
@@ -182,10 +203,10 @@ void MapConverter::writeSectors(std::fstream &file, float coordinateDivider)
     for(const auto & sec : sectors)
     {
         // Because sectors would be really high.
-        constexpr float sectorHeigthDivider = 4.0f;
+        constexpr float sectorHeigthDivider = 8.0f;
         file << "s "<< sec.startWall << " " << sec.wallNum << " "
-             << static_cast<float>(sec.floorHeigth)/(coordinateDivider*sectorHeigthDivider) << " "
              << static_cast<float>(sec.ceilingHeight)/(coordinateDivider*sectorHeigthDivider) << " "
+             << static_cast<float>(sec.floorHeigth)/(coordinateDivider*sectorHeigthDivider) << " "
              << sec.ceilingTextureIndex << " " << sec.floorTextureIndex << "\n";
     }
 }
@@ -229,6 +250,7 @@ void MapConverter::convert(const std::string &path, const float coordinateDivide
     fstream file(path, ios_base::out);
 
     writeHeader(file, coordinateDivider);
+    writeTexturePaths(file);
     writeSectors(file, coordinateDivider);
     writeWalls(file, coordinateDivider);
 

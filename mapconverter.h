@@ -52,6 +52,7 @@ class MapConverter
     void readWalls(std::fstream &file);
 
     void writeHeader(std::fstream &file, float coordinateDivider);
+    void writeTexturePaths(std::fstream &file);
     void writeSectors(std::fstream &file, float coordinateDivider);
     void writeWalls(std::fstream &file, float coordinateDivider);
 
